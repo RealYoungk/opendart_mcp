@@ -1,0 +1,30 @@
+name: opendart_mcp
+description: >-
+  MCP (Model Context Protocol) server for OpenDART API.
+  Provides LLM-accessible tools for Korean corporate disclosure,
+  financial statements, and ownership data from FSS DART system.
+version: 0.1.0
+homepage: https://github.com/realyoungk/opendart_mcp
+repository: https://github.com/realyoungk/opendart_mcp
+issue_tracker: https://github.com/realyoungk/opendart_mcp/issues
+topics:
+  - mcp
+  - dart
+  - opendart
+  - finance
+  - korea
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  mcp_dart: ^1.2.2
+  http: ^1.2.0
+  args: ^2.5.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
+
+executables:
+  opendart_mcp: opendart_mcp
