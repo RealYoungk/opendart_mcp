@@ -10,4 +10,4 @@ library opendart_mcp;
 
 export 'src/server.dart' show createServer;
 export 'src/client/opendart_client.dart'
-    show OpenDartClient, OpenDartException;
+    show OpenDartClient, OpenDartException, CorpInfo;

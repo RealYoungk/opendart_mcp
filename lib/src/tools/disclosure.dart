@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:mcp_dart/mcp_dart.dart';
 import '../client/opendart_client.dart';
 import 'helpers.dart';
@@ -141,7 +143,8 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
   server.registerTool(
     'search_corp_code',
     description: '회사명으로 고유번호(corp_code)를 검색합니다. '
-        '다른 도구에서 corp_code가 필요할 때 먼저 이 도구를 사용하세요.',
+        '다른 도구에서 corp_code가 필요할 때 먼저 이 도구를 사용하세요. '
+        '(corpCode.xml 전체 기업 목록 기반, 첫 호출 시 캐시 로드)',
     inputSchema: ToolInputSchema.fromJson({
       'properties': {
         'corp_name': {
@@ -154,35 +157,35 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
     annotations: ToolAnnotations(readOnlyHint: true),
     callback: (args, extra) async {
       try {
-        // Use disclosure search with corp_name to find corp_code
-        final result = await client.get('list.json', params: {
-          'corp_name': args['corp_name'] as String,
-          'page_count': '5',
-        });
+        final name = args['corp_name'] as String;
+        final results = await client.searchCorpCode(name);
 
-        final list = result['list'] as List<dynamic>? ?? [];
-        if (list.isEmpty) {
+        if (results.isEmpty) {
           return CallToolResult(
             content: [
-              TextContent(text: '"${args['corp_name']}"에 해당하는 기업을 찾을 수 없습니다.')
+              TextContent(text: '"$name"에 해당하는 기업을 찾을 수 없습니다.')
             ],
           );
         }
 
-        // Deduplicate by corp_code
-        final seen = <String>{};
         final buffer = StringBuffer();
-        buffer.writeln('🔍 "${args['corp_name']}" 검색 결과:');
+        buffer.writeln('🔍 "$name" 검색 결과 (${results.length}건):');
         buffer.writeln();
 
-        for (final item in list) {
-          final code = item['corp_code'] as String;
-          if (seen.add(code)) {
-            final cls = corpClsLabel(item['corp_cls'] as String?);
-            buffer.writeln('  ${item['corp_name']} [$cls]');
-            buffer.writeln('    corp_code: $code');
-            buffer.writeln();
+        // Show up to 20 results to avoid overwhelming output
+        final displayResults = results.take(20);
+        for (final corp in displayResults) {
+          final listed = corp.isListed ? '[${corp.stockCode}]' : '[비상장]';
+          buffer.writeln('  ${corp.corpName} $listed');
+          buffer.writeln('    corp_code: ${corp.corpCode}');
+          if (corp.corpEngName != null && corp.corpEngName!.isNotEmpty) {
+            buffer.writeln('    영문명: ${corp.corpEngName}');
           }
+          buffer.writeln();
+        }
+
+        if (results.length > 20) {
+          buffer.writeln('  ... 외 ${results.length - 20}건');
         }
 
         return CallToolResult(
@@ -224,7 +227,16 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
         buffer.writeln('형식: ZIP');
 
         return CallToolResult(
-          content: [TextContent(text: buffer.toString())],
+          content: [
+            TextContent(text: buffer.toString()),
+            EmbeddedResource(
+              resource: BlobResourceContents(
+                uri: 'opendart://document/$rceptNo',
+                mimeType: 'application/zip',
+                blob: base64Encode(bytes),
+              ),
+            ),
+          ],
         );
       } on OpenDartException catch (e) {
         return errorResult(e);

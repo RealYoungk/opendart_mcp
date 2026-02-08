@@ -1,14 +1,12 @@
 # opendart_mcp
 
 [![pub package](https://img.shields.io/pub/v/opendart_mcp.svg)](https://pub.dev/packages/opendart_mcp)
+[![pub points](https://img.shields.io/pub/points/opendart_mcp)](https://pub.dev/packages/opendart_mcp/score)
 [![License: CC BY-ND 4.0](https://img.shields.io/badge/license-CC%20BY--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nd/4.0/)
 
-[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server for
-[OpenDART API](https://opendart.fss.or.kr/) — Korea's Financial Supervisory
-Service electronic disclosure system.
+OpenDART API를 MCP 도구로 제공하는 서버
 
-Enables LLMs (Claude, GPT, etc.) to directly access Korean corporate disclosure
-data, financial statements, and ownership information.
+LLM(Claude, GPT 등)이 한국 기업의 공시정보, 재무제표, 지분공시 데이터에 직접 접근할 수 있게 합니다.
 
 ## Features
 
@@ -23,9 +21,125 @@ data, financial statements, and ownership information.
 | DS005 주요사항보고서 | 36 | 증자/감자, M&A, 소송, 사채발행, 자사주 등 |
 | DS006 증권신고서 | 6 | 지분증권, 채무증권, 합병, 분할 등 |
 
-## OpenDART API Coverage
+## Quick Start
 
-전체 **83개** API 완전 구현 (DS001~DS006)
+### 1. API 키 발급
+
+[OpenDART](https://opendart.fss.or.kr/)에서 회원가입 후 인증키를 발급받으세요.
+
+- OpenDART 로그인 후 [인증키 발급](https://opendart.fss.or.kr/uss/olh/oao/OlhOaoOAuth.do) 페이지에서 신청
+- 발급 즉시 사용 가능 (관리자 승인 필요 없음)
+
+### 2. 설치
+
+```bash
+dart pub global activate opendart_mcp
+```
+
+설치 후 `opendart_mcp` 명령어를 사용할 수 있습니다.
+
+### 3. MCP 클라이언트 설정
+
+#### Claude Desktop
+
+`claude_desktop_config.json` 파일 위치:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+다음 설정을 추가하세요:
+
+```json
+{
+  "mcpServers": {
+    "opendart": {
+      "command": "opendart_mcp",
+      "env": {
+        "OPENDART_API_KEY": "여기에_API_키_입력"
+      }
+    }
+  }
+}
+```
+
+Claude Desktop을 재시작하면 opendart 서버가 연결됩니다.
+
+#### Claude Code
+
+```bash
+claude mcp add opendart -e OPENDART_API_KEY=여기에_API_키_입력 -- opendart_mcp
+```
+
+#### Cursor
+
+설정 > MCP Servers에서 추가하거나, `.cursor/mcp.json` 파일을 직접 편집:
+
+```json
+{
+  "mcpServers": {
+    "opendart": {
+      "command": "opendart_mcp",
+      "env": {
+        "OPENDART_API_KEY": "여기에_API_키_입력"
+      }
+    }
+  }
+}
+```
+
+#### Windsurf
+
+`~/.codeium/windsurf/mcp_config.json` 파일에 다음 설정 추가:
+
+```json
+{
+  "mcpServers": {
+    "opendart": {
+      "command": "opendart_mcp",
+      "env": {
+        "OPENDART_API_KEY": "여기에_API_키_입력"
+      }
+    }
+  }
+}
+```
+
+#### 기타 MCP 클라이언트
+
+stdio transport를 지원하는 모든 MCP 클라이언트에서 사용 가능합니다.
+
+명령어: `opendart_mcp`
+환경변수: `OPENDART_API_KEY`
+
+## 사용 예시
+
+MCP 클라이언트에 연결 후 다음과 같이 질문할 수 있습니다:
+
+**공시 검색**
+- "삼성전자의 최근 공시를 검색해줘"
+- "2024년 1월에 제출된 네이버의 사업보고서 찾아줘"
+
+**재무정보**
+- "SK하이닉스의 2024년 사업보고서 재무제표를 보여줘"
+- "삼성전자와 SK하이닉스의 주요 재무지표를 비교해줘"
+- "카카오의 2023년 손익계산서 주요 계정과목 알려줘"
+
+**주주 및 지분정보**
+- "네이버의 대량보유 주주 현황은?"
+- "삼성전자 최대주주 변동현황 보여줘"
+
+**정기보고서 정보**
+- "삼성전자 2024년 배당 현황 알려줘"
+- "LG에너지솔루션의 임원 현황을 보여줘"
+- "카카오의 자기주식 취득 및 처분 현황은?"
+
+**주요사항보고서**
+- "네이버의 최근 유상증자 결정 내역 찾아줘"
+- "삼성바이오로직스의 소송 제기 현황 보여줘"
+
+## API Coverage
+
+<details>
+<summary>전체 83개 API 상세 목록 보기</summary>
 
 ### DS001 — 공시정보 (4개)
 | # | API | 설명 | 지원 |
@@ -134,81 +248,27 @@ data, financial statements, and ownership information.
 | 5 | 주식의포괄적교환·이전 | 증권신고서(주식의포괄적교환·이전) 요약 정보 | ✅ |
 | 6 | 분할 | 증권신고서(분할) 요약 정보 | ✅ |
 
-## Getting Started
-
-### 1. Get an API Key
-
-[OpenDART](https://opendart.fss.or.kr/)에서 회원가입 후 인증키를 발급받으세요.
-
-### 2. Install
-
-```bash
-dart pub global activate opendart_mcp
-```
-
-Or add to `pubspec.yaml`:
-
-```yaml
-dependencies:
-  opendart_mcp: ^0.1.0
-```
-
-### 3. Run
-
-```bash
-export OPENDART_API_KEY=your_api_key_here
-opendart_mcp
-```
-
-### 4. Configure MCP Client
-
-#### Claude Desktop (`claude_desktop_config.json`)
-
-```json
-{
-  "mcpServers": {
-    "opendart": {
-      "command": "dart",
-      "args": ["run", "opendart_mcp"],
-      "env": {
-        "OPENDART_API_KEY": "your_api_key_here"
-      }
-    }
-  }
-}
-```
-
-#### Claude Code
-
-```bash
-claude mcp add opendart -- dart run opendart_mcp
-```
-
-## Usage Examples
-
-Once connected, you can ask your LLM things like:
-
-- "삼성전자의 최근 공시를 검색해줘"
-- "SK하이닉스의 2024년 사업보고서 재무제표를 보여줘"
-- "삼성전자와 SK하이닉스의 주요 재무지표를 비교해줘"
-- "네이버의 대량보유 주주 현황은?"
-- "삼성전자 2024년 배당 현황 알려줘"
-- "LG에너지솔루션의 임원 현황을 보여줘"
+</details>
 
 ## Development
 
+프로젝트 개발 환경 설정:
+
 ```bash
-# Get dependencies
+# 의존성 설치
 dart pub get
 
-# Run in development
+# 개발 모드 실행
 OPENDART_API_KEY=your_key dart run bin/opendart_mcp.dart
 
-# Run tests
+# 테스트 실행
 dart test
 
-# Analyze
+# 정적 분석
 dart analyze
+
+# 컴파일 (단일 실행파일)
+dart compile exe bin/opendart_mcp.dart -o bin/opendart_mcp
 ```
 
 ## License

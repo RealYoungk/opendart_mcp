@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:mcp_dart/mcp_dart.dart';
 import '../client/opendart_client.dart';
 import 'helpers.dart';
@@ -260,7 +262,16 @@ void registerFinancialTools(McpServer server, OpenDartClient client) {
         buffer.writeln('파일크기: ${bytes.length} bytes');
 
         return CallToolResult(
-          content: [TextContent(text: buffer.toString())],
+          content: [
+            TextContent(text: buffer.toString()),
+            EmbeddedResource(
+              resource: BlobResourceContents(
+                uri: 'opendart://xbrl/$rceptNo',
+                mimeType: 'application/zip',
+                blob: base64Encode(bytes),
+              ),
+            ),
+          ],
         );
       } on OpenDartException catch (e) {
         return errorResult(e);
