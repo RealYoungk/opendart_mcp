@@ -1,63 +1,66 @@
 import 'package:mcp_dart/mcp_dart.dart';
 import '../client/opendart_client.dart';
+import 'helpers.dart';
 
 /// Registers disclosure-related tools (공시정보).
 void registerDisclosureTools(McpServer server, OpenDartClient client) {
   // ─── 공시검색 ─────────────────────────────────────────────
-  server.tool(
+  server.registerTool(
     'search_disclosure',
     description: '공시 목록을 검색합니다. '
         '기업명, 기간, 공시유형 등으로 필터링할 수 있습니다.',
-    inputSchemaProperties: {
-      'corp_code': {
-        'type': 'string',
-        'description': '고유번호 (8자리). corp_code 또는 corp_name 중 하나 입력',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'corp_code': {
+          'type': 'string',
+          'description': '고유번호 (8자리). corp_code 또는 corp_name 중 하나 입력',
+        },
+        'corp_name': {
+          'type': 'string',
+          'description': '회사명 (부분 검색 가능)',
+        },
+        'bgn_de': {
+          'type': 'string',
+          'description': '시작일 (YYYYMMDD). 기본값: 오늘 기준 1주일 전',
+        },
+        'end_de': {
+          'type': 'string',
+          'description': '종료일 (YYYYMMDD). 기본값: 오늘',
+        },
+        'last_reprt_at': {
+          'type': 'string',
+          'description': '최종보고서만 검색 (Y/N). 기본값: N',
+          'enum': ['Y', 'N'],
+        },
+        'pblntf_ty': {
+          'type': 'string',
+          'description': '공시유형: A=정기공시, B=주요사항보고, '
+              'C=발행공시, D=지분공시, E=기타공시, '
+              'F=외부감사관련, G=펀드공시, H=자산유동화, '
+              'I=거래소공시, J=공정위공시',
+        },
+        'page_no': {
+          'type': 'string',
+          'description': '페이지 번호 (기본값: 1)',
+        },
+        'page_count': {
+          'type': 'string',
+          'description': '페이지당 건수 (기본값: 10, 최대: 100)',
+        },
       },
-      'corp_name': {
-        'type': 'string',
-        'description': '회사명 (부분 검색 가능)',
-      },
-      'bgn_de': {
-        'type': 'string',
-        'description': '시작일 (YYYYMMDD). 기본값: 오늘 기준 1주일 전',
-      },
-      'end_de': {
-        'type': 'string',
-        'description': '종료일 (YYYYMMDD). 기본값: 오늘',
-      },
-      'last_reprt_at': {
-        'type': 'string',
-        'description': '최종보고서만 검색 (Y/N). 기본값: N',
-        'enum': ['Y', 'N'],
-      },
-      'pblntf_ty': {
-        'type': 'string',
-        'description': '공시유형: A=정기공시, B=주요사항보고, '
-            'C=발행공시, D=지분공시, E=기타공시, '
-            'F=외부감사관련, G=펀드공시, H=자산유동화, '
-            'I=거래소공시, J=공정위공시',
-      },
-      'page_no': {
-        'type': 'string',
-        'description': '페이지 번호 (기본값: 1)',
-      },
-      'page_count': {
-        'type': 'string',
-        'description': '페이지당 건수 (기본값: 10, 최대: 100)',
-      },
-    },
+    }),
     annotations: ToolAnnotations(readOnlyHint: true),
-    callback: (args) async {
+    callback: (args, extra) async {
       try {
         final params = <String, String>{};
-        _addIfPresent(params, 'corp_code', args['corp_code']);
-        _addIfPresent(params, 'corp_name', args['corp_name']);
-        _addIfPresent(params, 'bgn_de', args['bgn_de']);
-        _addIfPresent(params, 'end_de', args['end_de']);
-        _addIfPresent(params, 'last_reprt_at', args['last_reprt_at']);
-        _addIfPresent(params, 'pblntf_ty', args['pblntf_ty']);
-        _addIfPresent(params, 'page_no', args['page_no']);
-        _addIfPresent(params, 'page_count', args['page_count']);
+        addIfPresent(params, 'corp_code', args['corp_code']);
+        addIfPresent(params, 'corp_name', args['corp_name']);
+        addIfPresent(params, 'bgn_de', args['bgn_de']);
+        addIfPresent(params, 'end_de', args['end_de']);
+        addIfPresent(params, 'last_reprt_at', args['last_reprt_at']);
+        addIfPresent(params, 'pblntf_ty', args['pblntf_ty']);
+        addIfPresent(params, 'page_no', args['page_no']);
+        addIfPresent(params, 'page_count', args['page_count']);
 
         final result = await client.get('list.json', params: params);
 
@@ -82,25 +85,27 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
           content: [TextContent(text: buffer.toString())],
         );
       } on OpenDartException catch (e) {
-        return _errorResult(e);
+        return errorResult(e);
       }
     },
   );
 
   // ─── 기업개황 ─────────────────────────────────────────────
-  server.tool(
+  server.registerTool(
     'get_company',
     description: '기업 기본정보(기업개황)를 조회합니다. '
         '대표자명, 업종, 주소, 홈페이지, 결산월 등.',
-    inputSchemaProperties: {
-      'corp_code': {
-        'type': 'string',
-        'description': '고유번호 (8자리)',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'corp_code': {
+          'type': 'string',
+          'description': '고유번호 (8자리)',
+        },
       },
-    },
-    inputSchemaRequired: ['corp_code'],
+      'required': ['corp_code'],
+    }),
     annotations: ToolAnnotations(readOnlyHint: true),
-    callback: (args) async {
+    callback: (args, extra) async {
       try {
         final result = await client.get('company.json', params: {
           'corp_code': args['corp_code'] as String,
@@ -127,25 +132,27 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
           content: [TextContent(text: buffer.toString())],
         );
       } on OpenDartException catch (e) {
-        return _errorResult(e);
+        return errorResult(e);
       }
     },
   );
 
   // ─── 고유번호 조회 (회사명 → corp_code 변환) ─────────────
-  server.tool(
+  server.registerTool(
     'search_corp_code',
     description: '회사명으로 고유번호(corp_code)를 검색합니다. '
         '다른 도구에서 corp_code가 필요할 때 먼저 이 도구를 사용하세요.',
-    inputSchemaProperties: {
-      'corp_name': {
-        'type': 'string',
-        'description': '검색할 회사명 (예: 삼성전자, SK하이닉스)',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'corp_name': {
+          'type': 'string',
+          'description': '검색할 회사명 (예: 삼성전자, SK하이닉스)',
+        },
       },
-    },
-    inputSchemaRequired: ['corp_name'],
+      'required': ['corp_name'],
+    }),
     annotations: ToolAnnotations(readOnlyHint: true),
-    callback: (args) async {
+    callback: (args, extra) async {
       try {
         // Use disclosure search with corp_name to find corp_code
         final result = await client.get('list.json', params: {
@@ -171,7 +178,7 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
         for (final item in list) {
           final code = item['corp_code'] as String;
           if (seen.add(code)) {
-            final cls = _corpClsLabel(item['corp_cls'] as String?);
+            final cls = corpClsLabel(item['corp_cls'] as String?);
             buffer.writeln('  ${item['corp_name']} [$cls]');
             buffer.writeln('    corp_code: $code');
             buffer.writeln();
@@ -182,36 +189,46 @@ void registerDisclosureTools(McpServer server, OpenDartClient client) {
           content: [TextContent(text: buffer.toString())],
         );
       } on OpenDartException catch (e) {
-        return _errorResult(e);
+        return errorResult(e);
       }
     },
   );
-}
 
-void _addIfPresent(Map<String, String> params, String key, dynamic value) {
-  if (value != null && value.toString().isNotEmpty) {
-    params[key] = value.toString();
-  }
-}
+  // ─── 공시서류원본파일 ───────────────────────────────────────
+  server.registerTool(
+    'download_document',
+    description: '공시서류 원본파일(ZIP)을 다운로드합니다. '
+        '접수번호(rcept_no)가 필요합니다.',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'rcept_no': {
+          'type': 'string',
+          'description': '접수번호 (14자리)',
+        },
+      },
+      'required': ['rcept_no'],
+    }),
+    annotations: ToolAnnotations(readOnlyHint: true),
+    callback: (args, extra) async {
+      try {
+        final rceptNo = args['rcept_no'] as String;
+        final bytes = await client.getBytes('document.xml', params: {
+          'rcept_no': rceptNo,
+        });
 
-String _corpClsLabel(String? cls) {
-  switch (cls) {
-    case 'Y':
-      return '유가증권';
-    case 'K':
-      return '코스닥';
-    case 'N':
-      return '코넥스';
-    case 'E':
-      return '기타';
-    default:
-      return cls ?? '?';
-  }
-}
+        final buffer = StringBuffer();
+        buffer.writeln('📥 공시서류 원본파일 다운로드 완료');
+        buffer.writeln('═══════════════════════════════════════');
+        buffer.writeln('접수번호: $rceptNo');
+        buffer.writeln('파일크기: ${bytes.length} bytes');
+        buffer.writeln('형식: ZIP');
 
-CallToolResult _errorResult(OpenDartException e) {
-  return CallToolResult(
-    content: [TextContent(text: '❌ 오류: ${e.message}')],
-    isError: true,
+        return CallToolResult(
+          content: [TextContent(text: buffer.toString())],
+        );
+      } on OpenDartException catch (e) {
+        return errorResult(e);
+      }
+    },
   );
 }

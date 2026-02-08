@@ -1,22 +1,25 @@
 import 'package:mcp_dart/mcp_dart.dart';
 import '../client/opendart_client.dart';
+import 'helpers.dart';
 
 /// Registers ownership-related tools (지분공시).
 void registerOwnershipTools(McpServer server, OpenDartClient client) {
   // ─── 대량보유 상황보고 ────────────────────────────────────
-  server.tool(
+  server.registerTool(
     'get_major_shareholders',
     description: '대량보유 상황보고 내역을 조회합니다. '
         '5% 이상 지분 보유자 정보.',
-    inputSchemaProperties: {
-      'corp_code': {
-        'type': 'string',
-        'description': '고유번호 (8자리)',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'corp_code': {
+          'type': 'string',
+          'description': '고유번호 (8자리)',
+        },
       },
-    },
-    inputSchemaRequired: ['corp_code'],
+      'required': ['corp_code'],
+    }),
     annotations: ToolAnnotations(readOnlyHint: true),
-    callback: (args) async {
+    callback: (args, extra) async {
       try {
         final result = await client.get('majorstock.json', params: {
           'corp_code': args['corp_code'] as String,
@@ -46,27 +49,26 @@ void registerOwnershipTools(McpServer server, OpenDartClient client) {
           content: [TextContent(text: buffer.toString())],
         );
       } on OpenDartException catch (e) {
-        return CallToolResult(
-          content: [TextContent(text: '❌ 오류: ${e.message}')],
-          isError: true,
-        );
+        return errorResult(e);
       }
     },
   );
 
   // ─── 임원·주요주주 소유보고 ───────────────────────────────
-  server.tool(
+  server.registerTool(
     'get_executive_shareholding',
     description: '임원 및 주요주주의 주식 소유 현황을 조회합니다.',
-    inputSchemaProperties: {
-      'corp_code': {
-        'type': 'string',
-        'description': '고유번호 (8자리)',
+    inputSchema: ToolInputSchema.fromJson({
+      'properties': {
+        'corp_code': {
+          'type': 'string',
+          'description': '고유번호 (8자리)',
+        },
       },
-    },
-    inputSchemaRequired: ['corp_code'],
+      'required': ['corp_code'],
+    }),
     annotations: ToolAnnotations(readOnlyHint: true),
-    callback: (args) async {
+    callback: (args, extra) async {
       try {
         final result = await client.get('elestock.json', params: {
           'corp_code': args['corp_code'] as String,
@@ -96,10 +98,7 @@ void registerOwnershipTools(McpServer server, OpenDartClient client) {
           content: [TextContent(text: buffer.toString())],
         );
       } on OpenDartException catch (e) {
-        return CallToolResult(
-          content: [TextContent(text: '❌ 오류: ${e.message}')],
-          isError: true,
-        );
+        return errorResult(e);
       }
     },
   );

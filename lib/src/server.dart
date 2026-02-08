@@ -3,7 +3,10 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'client/opendart_client.dart';
 import 'tools/disclosure.dart';
 import 'tools/financial.dart';
+import 'tools/major_event.dart';
 import 'tools/ownership.dart';
+import 'tools/periodic_report.dart';
+import 'tools/securities_reg.dart';
 
 /// Creates and configures the OpenDART MCP server.
 ///
@@ -30,9 +33,12 @@ McpServer createServer({String? apiKey}) {
   );
 
   // Register all tool groups
-  registerDisclosureTools(server, client);
-  registerFinancialTools(server, client);
-  registerOwnershipTools(server, client);
+  registerDisclosureTools(server, client); // DS001: 공시정보
+  registerPeriodicReportTools(server, client); // DS002: 정기보고서 주요정보
+  registerFinancialTools(server, client); // DS003: 재무정보
+  registerOwnershipTools(server, client); // DS004: 지분공시
+  registerMajorEventTools(server, client); // DS005: 주요사항보고서
+  registerSecuritiesRegTools(server, client); // DS006: 증권신고서
 
   return server;
 }
